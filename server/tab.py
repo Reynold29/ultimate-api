@@ -68,7 +68,7 @@ class UltimateTab(object):
 
 
     def _append_new_line(self, type: str, content_tag: str, content: Any) -> None:
-        line = {'type': type}
+        line = {}
         if content_tag is not None:
             line[content_tag] = content
 

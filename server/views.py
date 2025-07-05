@@ -8,7 +8,7 @@ SUPPORTED_UG_URI = 'tabs.ultimate-guitar.com'
 
 @app.route('/')
 def index():
-    return 'hi'
+    return 'The API Server is running'
 
 @app.route('/tab')
 def tab():

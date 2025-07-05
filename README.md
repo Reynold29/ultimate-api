@@ -1,42 +1,210 @@
-# Ultimate-API
+# Ultimate Guitar Tab Parser
 
-:guitar: *An API for ultimate-guitar.com*
+A powerful API and frontend application for parsing and extracting guitar tabs from Ultimate Guitar. This project includes both a Flask backend API and a modern React frontend.
 
-![Python-Version](https://img.shields.io/badge/Python-3.6.1-blue.svg)
+## 🎸 Features
 
-## Setup
-1. Install python3 from https://www.python.org/downloads/
+- **Flask API** - RESTful API for parsing Ultimate Guitar tabs
+- **React Frontend** - Modern, responsive web interface
+- **Tab Extraction** - Extract chords, lyrics, and metadata
+- **JSON Output** - Structured data for easy integration
+- **Production Ready** - Proper error handling, CORS, and deployment configs
 
-1. Create a virtual environment of python3:
+## 📁 Project Structure
 
-    ```Python
-    # Install virtualenv:
-    # pip install virtualenv
-    virtualenv -p /usr/local/bin/python3 venv
-    source venv/bin/activate
-    ```
-
-1. Install dependancies:
-
-    ```Python
-    pip install -r requirements.txt
-    ```
-
-1. Usage:
-
-    ```Python
-    export FLASK_DEBUG=1 // Export for debug
-    python run.py
-    ```
-
-## Endpoints
-
-| Method | Endpoint |  Parameters | Result |
-| ------ | -------- | ---------- | ------ |
-| `GET`  | `/tab`   | `url`: A full (including protocol) url for an ultimate-guitar.com tab. | JSON response containing tab info as well as each tab line
-
-## Running Tests
-To run the full test suite execute the following from the top level directory.
-```Python
-python test.py
 ```
+ultimate-api/
+├── server/                 # Flask API backend
+│   ├── __init__.py        # Flask app initialization
+│   ├── views.py           # API endpoints
+│   ├── parser.py          # HTML parsing logic
+│   ├── tab_parser.py      # Tab extraction utilities
+│   └── tab.py             # Tab data structures
+├── frontend/              # React frontend application
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── config/        # API configuration
+│   │   ├── services/      # API service layer
+│   │   └── ...
+│   ├── package.json       # Frontend dependencies
+│   └── README.md          # Frontend documentation
+├── api_client.js          # JavaScript API client
+├── frontend_test.html     # Simple HTML test page
+├── requirements.txt       # Python dependencies
+├── run.py                 # Flask server entry point
+└── README.md              # This file
+```
+
+## 🚀 Quick Start
+
+### Backend (Flask API)
+
+1. **Install Python dependencies:**
+   ```bash
+   cd ultimate-api
+   source venv/bin/activate  # or create new venv
+   pip install -r requirements.txt
+   ```
+
+2. **Start the Flask server:**
+   ```bash
+   python run.py
+   ```
+
+3. **Test the API:**
+   - Visit `http://127.0.0.1:5000/` for status
+   - Use `/tab?url=<ultimate_guitar_url>` to parse tabs
+
+### Frontend (React App)
+
+1. **Install Node.js dependencies:**
+   ```bash
+   cd ultimate-api/frontend
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Open in browser:**
+   The app will open at `http://localhost:3000`
+
+## 🔌 API Endpoints
+
+### GET `/`
+Returns API status message.
+
+**Response:**
+```
+The API Server is running
+```
+
+### GET `/tab?url=<ultimate_guitar_url>`
+Parses an Ultimate Guitar tab URL and returns structured data.
+
+**Parameters:**
+- `url` (required): Ultimate Guitar tab URL
+
+**Response:**
+```json
+{
+  "title": "Song Title",
+  "artist_name": "Artist Name",
+  "author": "Tab Author",
+  "difficulty": "Intermediate",
+  "key": "C",
+  "capo": "2nd fret",
+  "tuning": "Standard",
+  "lines": [
+    {
+      "lyric": "Song lyrics here"
+    },
+    {
+      "chords": [
+        {
+          "note": "G",
+          "pre_spaces": 8
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 🎨 Frontend Features
+
+- **Modern UI** - Beautiful, responsive design with Tailwind CSS
+- **Real-time Status** - API health monitoring with auto-refresh
+- **Tab Parsing** - Easy URL input and tab extraction
+- **Data Export** - Copy to clipboard and download JSON
+- **Error Handling** - User-friendly error messages
+- **Mobile Responsive** - Works on all devices
+
+## 🛠️ Development
+
+### Backend Development
+
+The Flask API is located in the `server/` directory:
+
+- `views.py` - API endpoints and request handling
+- `parser.py` - HTML parsing and tab extraction logic
+- `tab_parser.py` - High-level tab parsing functions
+- `tab.py` - Data structures for tab representation
+
+### Frontend Development
+
+The React frontend is in the `frontend/` directory:
+
+- `src/components/` - Reusable React components
+- `src/services/` - API communication layer
+- `src/config/` - Environment and API configuration
+
+## 🚀 Deployment
+
+### Backend Deployment
+
+1. **Production server setup:**
+   ```bash
+   pip install gunicorn
+   gunicorn -w 4 -b 0.0.0.0:5000 run:app
+   ```
+
+2. **Environment variables:**
+   ```bash
+   export FLASK_ENV=production
+   export FLASK_APP=run.py
+   ```
+
+### Frontend Deployment
+
+1. **Build for production:**
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. **Deploy options:**
+   - **Netlify:** Upload `dist` folder or connect GitHub repo
+   - **Vercel:** Deploy with Vercel CLI
+   - **Static hosting:** Upload `dist` folder to any static host
+
+3. **Environment setup:**
+   ```bash
+   VITE_API_URL=https://your-api-domain.com
+   ```
+
+## 📚 Documentation
+
+- [Frontend Documentation](frontend/README.md) - Complete frontend guide
+- [API Client](api_client.js) - JavaScript API client usage
+- [Frontend Test](frontend_test.html) - Simple HTML test page
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test both backend and frontend
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+
+1. Check the browser console for frontend errors
+2. Check the Flask server logs for backend errors
+3. Verify API connectivity
+4. Review the configuration files
+
+## 🔗 Related Projects
+
+- [Ultimate Guitar](https://tabs.ultimate-guitar.com) - Source of guitar tabs
+- [React](https://reactjs.org) - Frontend framework
+- [Flask](https://flask.palletsprojects.com) - Backend framework
+- [Tailwind CSS](https://tailwindcss.com) - Styling framework
