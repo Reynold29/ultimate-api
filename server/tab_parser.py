@@ -1,15 +1,15 @@
 import sys
 import json
 import requests
-from .parser import html_tab_to_json_dict
+from .parser import html_tab_to_json_dict, get_rendered_html
 
 def dict_from_ultimate_tab(url: str) -> json:
     '''
     Given a Ultimate Guitar tab url, will return a dictionary representing the
     song along with the song info
     '''
-    html = requests.get(url).content
-    ug_tags = ['js-tab-content', 'js-copy-content'] # tags the tabs are contained in
+    html = get_rendered_html(url)
+    ug_tags = ['js-tab-content', 'js-copy-content'] # tags the tabs are contained in (unused)
     tab_dict = html_tab_to_json_dict(html, ug_tags)
     return tab_dict
 
