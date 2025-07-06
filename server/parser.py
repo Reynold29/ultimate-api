@@ -1,10 +1,14 @@
 import json
+import time
 from bs4 import BeautifulSoup
 from .tab import UltimateTab, UltimateTabInfo
 import re
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 def _tab_info_from_soup(soup: BeautifulSoup) -> UltimateTabInfo:
@@ -60,41 +64,74 @@ def _tab_info_from_soup(soup: BeautifulSoup) -> UltimateTabInfo:
     return tab_info
 
 def is_chord_line(line):
-    # A line is a chord line if it contains only chord names and spaces
-    # This is a naive check; you may want to improve it for your use case
-    chord_pattern = re.compile(r'^([A-G][#b]?m?(maj7|sus4|dim|aug|add\d*)?\s*)+$')
-    return bool(chord_pattern.match(line.strip()))
+    """
+    A line is a chord line if it contains primarily chord names and spaces.
+    This improved version checks for chord patterns and minimal text content.
+    """
+    line = line.strip()
+    if not line:
+        return False
+    
+    # Common chord patterns (more comprehensive)
+    chord_pattern = re.compile(r'[A-G][#b]?(m|maj|min|dim|aug|sus[24]?|add\d*|maj7|m7|7|6|9|11|13)?')
+    
+    # Split the line into words
+    words = line.split()
+    if not words:
+        return False
+    
+    # Count how many words are chords
+    chord_count = 0
+    total_chars = 0
+    
+    for word in words:
+        total_chars += len(word)
+        if chord_pattern.match(word):
+            chord_count += 1
+    
+    # If more than 70% of words are chords, it's likely a chord line
+    if len(words) > 0 and chord_count / len(words) >= 0.7:
+        return True
+    
+    # Also check if the line is mostly spaces and a few chord-like words
+    # This catches lines like "    Cadd9  G  D                  Em7"
+    non_space_chars = len(line.replace(' ', ''))
+    if non_space_chars > 0 and chord_count / non_space_chars >= 0.6:
+        return True
+    
+    return False
 
-def html_tab_to_json_dict(html_body: str, pre_class_tags: [str]) -> json:
-    '''
-    Returns a json form of a 'pre' tag in an ultimate guitar html tabs body.
-
-    Parameters:
-        - html_body: The full html body of an ultimate guitar tab site
-        - pre_class_tags: (unused in new version)
-    '''
+def html_tab_to_json_dict(html_body: str) -> json:
+    start_parse = time.time()
     soup = BeautifulSoup(html_body, "html.parser")
-
-    # Get UltimateTabInfo object from soup html for artist, title, etc.
     tab_info = _tab_info_from_soup(soup)
-
-    # Find the first <pre> tag containing the tab content
     pre_tag = soup.find('pre')
     if pre_tag is None:
         return {'error': 'Could not find <pre> tag with tab content in the page. The page structure may have changed.'}
-
+    
     tab = UltimateTab()
     tab_text = pre_tag.get_text('\n')  # Get all text, preserving newlines
-
-    for line in tab_text.splitlines():
-        if not line.strip():
+    lines = tab_text.splitlines()
+    
+    # More sophisticated parsing: look for patterns
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        if not line:
             tab.append_blank_line()
-        elif is_chord_line(line):
+            i += 1
+            continue
+        
+        # Check if this line looks like a chord line
+        if is_chord_line(line):
             tab.append_chord_line(line)
+            i += 1
         else:
+            # This is a lyric line
             tab.append_lyric_line(line)
-
-    # Construct full json object
+            i += 1
+    
     json_obj = {
         'title': tab_info.title,
         'artist_name': tab_info.artist,
@@ -109,14 +146,62 @@ def html_tab_to_json_dict(html_body: str, pre_class_tags: [str]) -> json:
     if tab_info.tuning is not None:
         json_obj['tuning'] = tab_info.tuning
     json_obj['lines'] = tab.as_json_dictionary()['lines']
+    print(f"[Timing] Tab parsing time: {time.time() - start_parse:.2f}s")
     return {'tab': json_obj}
 
 def get_rendered_html(url):
     options = Options()
     options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--blink-settings=imagesEnabled=false")
+    options.add_argument("--disable-features=VizDisplayCompositor")
+    # Block images, CSS, fonts via CDP
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
-    driver.get(url)
-    html = driver.page_source
-    driver.quit()
+    driver.set_page_load_timeout(10)
+    try:
+        driver.execute_cdp_cmd("Network.enable", {})
+        driver.execute_cdp_cmd("Network.setBlockedURLs", {"urls": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.css", "*.woff", "*.ttf", "*.svg"]})
+        start = time.time()
+        driver.get(url)
+        # Wait for <pre> tag to appear
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "pre"))
+        )
+        html = driver.page_source
+        print(f"[Timing] Selenium fetch time: {time.time() - start:.2f}s")
+    except Exception as e:
+        print(f"[Error] Selenium page load failed: {e}")
+        html = ""
+    finally:
+        driver.quit()
     return html
+
+# Optionally, you could add a fallback to requests+BeautifulSoup for static pages:
+def get_html_requests(url):
+    import requests
+    start = time.time()
+    try:
+        # Use a session with optimized headers for faster requests
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        })
+        resp = session.get(url, timeout=10)  # Reduced timeout for faster failure
+        resp.raise_for_status()
+        print(f"[Timing] requests fetch time: {time.time() - start:.2f}s")
+        return resp.text
+    except Exception as e:
+        print(f"[Error] requests fetch failed: {e}")
+        return ""

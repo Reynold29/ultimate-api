@@ -15,6 +15,13 @@ const apiClient = axios.create({
   },
 });
 
+// Log the actual timeout being used
+console.log(`🔧 Axios timeout configured: ${apiConfig.timeout}ms`);
+console.log(`🔧 Axios instance timeout: ${apiClient.defaults.timeout}ms`);
+
+// Override any default timeouts
+apiClient.defaults.timeout = apiConfig.timeout;
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
@@ -39,6 +46,8 @@ apiClient.interceptors.response.use(
       status: error.response?.status,
       message: error.response?.data?.error || error.message,
       url: error.config?.url,
+      timeout: error.config?.timeout,
+      code: error.code,
     });
     return Promise.reject(error);
   }
@@ -71,15 +80,32 @@ class ApiService {
       throw new Error('URL is required');
     }
 
+    console.log(`🎯 Starting tab parse for: ${url}`);
+    const startTime = Date.now();
+
     try {
       const response = await apiClient.get('/tab', {
         params: { url },
+        timeout: apiConfig.timeout, // Explicitly set timeout for this request
       });
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`✅ Tab parse completed in ${responseTime}ms`);
+      console.log(`📦 Response data:`, response.data);
+      
       return response.data;
     } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Tab parse failed after ${responseTime}ms:`, error);
+      
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`Request timed out after ${responseTime}ms. The server took too long to respond.`);
+      }
+      
       if (error.response?.status === 500) {
         throw new Error(error.response.data.error || 'Failed to parse tab');
       }
+      
       throw new Error(`Request failed: ${error.response?.data?.error || error.message}`);
     }
   }

@@ -83,11 +83,11 @@ The API configuration is handled in `src/config/api.js`:
 const config = {
   development: {
     apiUrl: 'http://127.0.0.1:5000',
-    timeout: 10000,
+    timeout: 60000, // 60 seconds for development
   },
   production: {
     apiUrl: process.env.VITE_API_URL || 'https://api.yourdomain.com',
-    timeout: 20000,
+    timeout: 60000, // 60 seconds for production
   },
 };
 ```

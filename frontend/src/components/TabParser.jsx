@@ -8,6 +8,7 @@ const TabParser = () => {
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('lyrics');
 
   const parseTab = async () => {
     if (!tabUrl.trim()) {
@@ -38,19 +39,35 @@ const TabParser = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      // Silent fail for clipboard operations
     }
   };
 
-  const downloadJson = () => {
+  const downloadTabContent = () => {
     if (!tabData) return;
     
-    const dataStr = JSON.stringify(tabData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    // Create content from lyrics and tabs
+    let content = '';
+    if (tabData.lyrics_text) {
+      content += tabData.lyrics_text;
+    }
+    if (tabData.lyrics_text && tabData.tabs_text) {
+      content += '\n\n';
+    }
+    if (tabData.tabs_text) {
+      content += tabData.tabs_text;
+    }
+    
+    const dataBlob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${tabData.title || 'tab'}-${tabData.artist_name || 'unknown'}.json`;
+    
+    // Generate filename from URL or use default
+    const urlParts = tabUrl.split('/');
+    const filename = urlParts.length > 2 ? urlParts.slice(-2).join('-') : 'tab-content';
+    link.download = `${filename}.txt`;
+    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -152,9 +169,9 @@ const TabParser = () => {
           <div className="card-header">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="card-title">{tabData.title || 'Untitled'}</h3>
+                <h3 className="card-title">Parsed Tab Data</h3>
                 <p className="card-description">
-                  by {tabData.artist_name || 'Unknown Artist'}
+                  {tabData.blocks?.length || 0} blocks extracted
                 </p>
               </div>
               <div className="flex space-x-2">
@@ -167,67 +184,58 @@ const TabParser = () => {
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
                 <button
-                  onClick={downloadJson}
+                  onClick={downloadTabContent}
                   className="btn btn-sm btn-primary"
-                  title="Download JSON file"
+                  title="Download Tab Content"
                 >
                   <Download className="h-4 w-4 mr-1" />
-                  Download
+                  Download Tab
                 </button>
               </div>
             </div>
           </div>
           <div className="card-content">
             <div className="space-y-4">
-              {/* Tab Info */}
-              {(tabData.difficulty || tabData.key || tabData.capo || tabData.tuning) && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                  {tabData.difficulty && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Difficulty</p>
-                      <p className="text-sm font-medium">{tabData.difficulty}</p>
-                    </div>
-                  )}
-                  {tabData.key && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Key</p>
-                      <p className="text-sm font-medium">{tabData.key}</p>
-                    </div>
-                  )}
-                  {tabData.capo && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Capo</p>
-                      <p className="text-sm font-medium">{tabData.capo}</p>
-                    </div>
-                  )}
-                  {tabData.tuning && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Tuning</p>
-                      <p className="text-sm font-medium">{tabData.tuning}</p>
-                    </div>
-                  )}
+              {/* Check for errors */}
+              {tabData.blocks?.some(block => block.error) && (
+                <div className="flex items-start space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-red-800">
+                    <p className="font-medium">Parsing Errors</p>
+                    {tabData.blocks.map((block, index) => 
+                      block.error && <p key={index}>{block.error}</p>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* Tab Content */}
+              {/* Tabbed Content */}
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Tab Content</h4>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto">
-                  {tabData.lines?.map((line, index) => (
-                    <div key={index} className="whitespace-pre">
-                      {line.lyric && <span>{line.lyric}</span>}
-                      {line.chords && (
-                        <span className="text-yellow-400">
-                          {line.chords.map((chord, chordIndex) => (
-                            <span key={chordIndex}>
-                              {' '.repeat(chord.pre_spaces)}{chord.note}
-                            </span>
-                          ))}
-                        </span>
-                      )}
-                      {!line.lyric && !line.chords && <span>&nbsp;</span>}
-                    </div>
-                  ))}
+                <div className="flex border-b border-gray-200 mb-2">
+                  <button
+                    className={`px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-150 ${activeTab === 'lyrics' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+                    onClick={() => setActiveTab('lyrics')}
+                  >
+                    Lyrics
+                  </button>
+                  <button
+                    className={`px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-150 ${activeTab === 'tabs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+                    onClick={() => setActiveTab('tabs')}
+                  >
+                    Tabs
+                  </button>
+                </div>
+                <div>
+                  {activeTab === 'lyrics' && (
+                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                      {tabData.lyrics_text || 'No lyrics found.'}
+                    </pre>
+                  )}
+                  {activeTab === 'tabs' && (
+                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                      {tabData.tabs_text || 'No tabs found.'}
+                    </pre>
+                  )}
                 </div>
               </div>
 

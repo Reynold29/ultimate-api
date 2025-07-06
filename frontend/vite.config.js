@@ -5,6 +5,17 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/tab': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        // Add this line:
+        timeout: 120000, // 2 minutes
+        proxyTimeout: 120000, // 2 minutes
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
