@@ -63,7 +63,7 @@ class ApiService {
    */
   async testConnection() {
     try {
-      const response = await apiClient.get('/');
+      const response = await apiClient.get('/api/health');
       return response.data;
     } catch (error) {
       throw new Error(`❌ Failed to connect to API: ${error.response?.data?.error || error.message}`);
