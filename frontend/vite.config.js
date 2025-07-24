@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/tab': {
-        target: 'http://127.0.0.1:5000',
+        target: process.env.VITE_API_URL,
         changeOrigin: true,
         // Add this line:
         timeout: 120000, // 2 minutes

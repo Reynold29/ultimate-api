@@ -12,7 +12,7 @@ def test_api_health():
     """Test if the API is running and healthy"""
     print("🔍 Testing API Health...")
     try:
-        response = requests.get("http://127.0.0.1:5000/", timeout=10)
+        response = requests.get(process.env.VITE_API_URL, timeout=10)
         if response.status_code == 200:
             print("✅ API is running and healthy")
             return True
@@ -33,7 +33,7 @@ def test_tab_parsing():
     try:
         start_time = time.time()
         response = requests.get(
-            "http://127.0.0.1:5000/tab",
+            "https://ultimate-api-production.up.railway.app/tab",
             params={"url": test_url},
             timeout=60
         )
@@ -119,7 +119,7 @@ def main():
     
     if api_healthy and parsing_working and frontend_working:
         print("\n🎉 ALL SYSTEMS OPERATIONAL!")
-        print("✅ API: http://127.0.0.1:5000")
+        print("✅ API: http://ultimate-api-production.up.railway.app")
         print("✅ Frontend: http://localhost:3000")
         print("\nYou can now use the application!")
     else:
