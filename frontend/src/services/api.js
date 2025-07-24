@@ -66,7 +66,7 @@ class ApiService {
       const response = await apiClient.get('/');
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to connect to API: ${error.response?.data?.error || error.message}`);
+      throw new Error(`❌ Failed to connect to API: ${error.response?.data?.error || error.message}`);
     }
   }
 
@@ -161,9 +161,15 @@ class ApiService {
       const response = await this.testConnection();
       const responseTime = Date.now() - startTime;
 
+      let message = response;
+      // If the response looks like HTML, show a simple message
+      if (typeof message === 'string' && message.trim().startsWith('<!DOCTYPE html')) {
+        message = 'API Server is running ✅';
+      }
+
       return {
         status: 'healthy',
-        message: response,
+        message,
         responseTime,
         timestamp: new Date().toISOString(),
       };
