@@ -213,3 +213,18 @@ If you encounter any issues:
 - [Backend API](../README.md) - Flask API documentation
 - [API Client](../api_client.js) - JavaScript API client
 - [Frontend Test](../frontend_test.html) - Simple HTML test page 
+
+## 🚀 Netlify Deployment
+
+To deploy the frontend to Netlify and connect it to your Railway backend:
+
+1. **Build Command:** `npm run build`
+2. **Publish Directory:** `dist`
+3. **Set Environment Variable:**
+   - Go to Site Settings > Environment Variables in Netlify
+   - Add:
+     - `VITE_API_URL=https://ultimate-api-production.up.railway.app`
+4. **Deploy:**
+   - Connect your GitHub repo and deploy, or drag-and-drop the `dist` folder after building locally.
+
+This will ensure your frontend talks to your Railway backend in production. 

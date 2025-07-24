@@ -5,7 +5,7 @@
 
 const config = {
   development: {
-    apiUrl: 'http://127.0.0.1:5000',
+    apiUrl: process.env.VITE_API_URL || 'http://127.0.0.1:5000',
     timeout: 120000, // Increased to 120 seconds for development
   },
   staging: {
