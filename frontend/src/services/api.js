@@ -161,11 +161,8 @@ class ApiService {
       const response = await this.testConnection();
       const responseTime = Date.now() - startTime;
 
-      let message = response;
-      // If the response looks like HTML, show a simple message
-      if (typeof message === 'string' && message.trim().startsWith('<!DOCTYPE html')) {
-        message = 'API Server is running ✅';
-      }
+      // Health Check Message
+      let message = 'API Server is running ✅';
 
       return {
         status: 'healthy',
