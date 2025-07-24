@@ -208,3 +208,27 @@ For issues and questions:
 - [React](https://reactjs.org) - Frontend framework
 - [Flask](https://flask.palletsprojects.com) - Backend framework
 - [Tailwind CSS](https://tailwindcss.com) - Styling framework
+
+# Railway Deployment (Backend)
+
+## How to Deploy on Railway
+
+1. **Ensure your dependencies are in `requirements.txt`.**
+2. **Your backend entrypoint is `run.py`, which starts the Flask server.**
+3. **Railway will automatically set the `PORT` environment variable.**
+   - The code already uses `os.environ.get('PORT', 5000)`.
+4. **Add a `Procfile` with the following content:**
+
+   ```
+   web: python run.py
+   ```
+
+5. **Deploy to Railway:**
+   - Push your code to GitHub.
+   - Create a new Railway project and link your GitHub repo.
+   - Railway will auto-detect Python and install dependencies.
+   - The backend will be available at the Railway-provided URL.
+
+## Notes
+- If you use Selenium, ensure you use a Railway plan that supports Docker or custom images, as browser automation may not work on the free tier.
+- For static Flask APIs, the default setup is sufficient.
