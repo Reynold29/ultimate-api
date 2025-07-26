@@ -6,7 +6,7 @@
  */
 
 class UltimateGuitarApiClient {
-    constructor(baseUrl = 'http://127.0.0.1:5000') {
+    constructor(baseUrl = 'https://ultimate-api-production.up.railway.app/') {
         this.baseUrl = baseUrl;
     }
 
