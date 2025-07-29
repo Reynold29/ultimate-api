@@ -4,5 +4,9 @@
       "PYTHON_VERSION": "3.10"
     }
   },
-  "start": "python run.py"
+  "start": "python run.py",
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
 } 

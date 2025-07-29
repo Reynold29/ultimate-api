@@ -12,9 +12,12 @@ def dict_from_ultimate_tab(url: str) -> json:
     html = get_html_requests(url)
     if not html or len(html.strip()) < 100:
         # Fallback to Selenium
-        html = get_rendered_html(url)
-        if not html or len(html.strip()) < 100:
-            return {'error': 'Failed to fetch tab content from both requests and Selenium methods'}
+        try:
+            html = get_rendered_html(url)
+            if not html or len(html.strip()) < 100:
+                return {'error': 'Failed to fetch tab content from both requests and Selenium methods'}
+        except Exception as e:
+            return {'error': f'Selenium failed: {str(e)}'}
     
     tab_dict = html_tab_to_json_dict(html)
     return tab_dict
@@ -30,7 +33,7 @@ def json_from_ultimate_tab(url: str) -> json:
     return data
 
 
-def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 3) -> list:
+def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
     '''
     Tries to fetch and parse the tab using requests first (faster for static pages).
     Only tries Selenium if requests fails to get a valid tab. Returns a list of blocks (lyrics/tabs) or a single error block if all fail.
@@ -40,8 +43,11 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 3) -> list:
     # Try requests first
     html = get_html_requests(url)
     if html and len(html.strip()) >= 100:
-        # Check if the HTML contains the <pre> tag (where tabs are stored)
-        if '<pre' in html:
+        # Check if the HTML contains any tab-related content
+        tab_indicators = ['<pre', '.js-tab-content', '.tab-content', 'chord', 'tab', 'lyric']
+        has_tab_content = any(indicator in html for indicator in tab_indicators)
+        
+        if has_tab_content:
             tab_dict = html_tab_to_json_dict(html)
             lines = tab_dict.get('tab', {}).get('lines', [])
             if lines:
@@ -72,14 +78,14 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 3) -> list:
             else:
                 errors.append("requests returned no tab lines")
         else:
-            errors.append("requests returned HTML without <pre> tag (likely dynamic content)")
+            errors.append("requests returned HTML without tab content (likely dynamic content)")
     else:
         if not html:
             errors.append("requests returned empty HTML")
         elif len(html.strip()) < 100:
             errors.append("requests returned too short HTML")
         else:
-            errors.append("requests returned HTML without <pre> tag (likely dynamic content)")
+            errors.append("requests returned HTML without tab content (likely dynamic content)")
 
     # Only try Selenium if requests failed
     for attempt in range(max_retries):
@@ -121,9 +127,8 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 3) -> list:
             errors.append(f"Selenium failed (attempt {attempt+1}): {str(e)}")
             continue
 
-    # If all attempts fail, return detailed error
-    error_msg = f"Failed to fetch and parse tab after requests and {max_retries} Selenium attempts. Errors: {'; '.join(errors)}"
-    return [{"error": error_msg}]
+    # If all attempts failed, return detailed error
+    return [{'error': f"Failed to fetch and parse tab after requests and {max_retries} Selenium attempts. Errors: {'; '.join(errors)}"}]
 
 
 if __name__ == '__main__':

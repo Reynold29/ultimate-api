@@ -9,7 +9,184 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+import os
+import subprocess
+import sys
+
+def install_chrome_on_railway():
+    """Install Chrome and ChromeDriver on Railway"""
+    try:
+        # Update package list
+        subprocess.run(["apt-get", "update", "-y"], check=True, capture_output=True)
+        
+        # Install dependencies
+        subprocess.run(["apt-get", "install", "-y", "wget", "gnupg", "curl"], check=True, capture_output=True)
+        
+        # Add Google Chrome repository
+        subprocess.run(["wget", "-q", "-O", "-", "https://dl.google.com/linux/linux_signing_key.pub"], 
+                      check=True, capture_output=True, stdout=subprocess.PIPE)
+        
+        # Add Chrome repository
+        with open("/etc/apt/sources.list.d/google-chrome.list", "w") as f:
+            f.write("deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\n")
+        
+        # Update and install Chrome
+        subprocess.run(["apt-get", "update", "-y"], check=True, capture_output=True)
+        subprocess.run(["apt-get", "install", "-y", "google-chrome-stable"], check=True, capture_output=True)
+        
+        # Install ChromeDriver
+        subprocess.run(["apt-get", "install", "-y", "chromium-chromedriver"], check=True, capture_output=True)
+        
+        print("Chrome and ChromeDriver installed successfully")
+        return True
+    except Exception as e:
+        print(f"Failed to install Chrome: {e}")
+        return False
+
+def get_chrome_driver():
+    """Get a working Chrome driver with multiple fallback strategies"""
+    
+    # Strategy 1: Try system Chrome
+    try:
+        if os.path.exists("/usr/bin/google-chrome-stable"):
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--window-size=1920,1080")
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--blink-settings=imagesEnabled=false")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-web-security")
+            options.add_argument("--allow-running-insecure-content")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-background-timer-throttling")
+            options.add_argument("--disable-backgrounding-occluded-windows")
+            options.add_argument("--disable-renderer-backgrounding")
+            options.add_argument("--disable-features=TranslateUI")
+            options.add_argument("--disable-ipc-flooding-protection")
+            
+            service = Service("/usr/bin/google-chrome-stable")
+            driver = webdriver.Chrome(service=service, options=options)
+            print("Using system Chrome")
+            return driver
+    except Exception as e:
+        print(f"System Chrome failed: {e}")
+    
+    # Strategy 2: Try system ChromeDriver
+    try:
+        if os.path.exists("/usr/bin/chromedriver"):
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--window-size=1920,1080")
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--blink-settings=imagesEnabled=false")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-web-security")
+            options.add_argument("--allow-running-insecure-content")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-background-timer-throttling")
+            options.add_argument("--disable-backgrounding-occluded-windows")
+            options.add_argument("--disable-renderer-backgrounding")
+            options.add_argument("--disable-features=TranslateUI")
+            options.add_argument("--disable-ipc-flooding-protection")
+            
+            service = Service("/usr/bin/chromedriver")
+            driver = webdriver.Chrome(service=service, options=options)
+            print("Using system ChromeDriver")
+            return driver
+    except Exception as e:
+        print(f"System ChromeDriver failed: {e}")
+    
+    # Strategy 3: Try webdriver-manager with manual path resolution
+    try:
+        from webdriver_manager.chrome import ChromeDriverManager
+        driver_path = ChromeDriverManager().install()
+        
+        # Find the actual chromedriver executable
+        if os.path.exists(driver_path):
+            driver_dir = os.path.dirname(driver_path)
+            actual_driver_path = None
+            
+            # Look for the actual chromedriver executable
+            for file in os.listdir(driver_dir):
+                if file.startswith('chromedriver') and not file.endswith(('.txt', '.md', '.notice')):
+                    actual_driver_path = os.path.join(driver_dir, file)
+                    break
+            
+            if actual_driver_path and os.path.isfile(actual_driver_path):
+                # Make it executable
+                os.chmod(actual_driver_path, 0o755)
+                
+                options = Options()
+                options.add_argument("--headless")
+                options.add_argument("--no-sandbox")
+                options.add_argument("--disable-dev-shm-usage")
+                options.add_argument("--disable-gpu")
+                options.add_argument("--disable-extensions")
+                options.add_argument("--disable-infobars")
+                options.add_argument("--window-size=1920,1080")
+                options.add_argument("--disable-blink-features=AutomationControlled")
+                options.add_argument("--blink-settings=imagesEnabled=false")
+                options.add_argument("--disable-features=VizDisplayCompositor")
+                options.add_argument("--disable-web-security")
+                options.add_argument("--allow-running-insecure-content")
+                options.add_argument("--disable-features=VizDisplayCompositor")
+                options.add_argument("--disable-background-timer-throttling")
+                options.add_argument("--disable-backgrounding-occluded-windows")
+                options.add_argument("--disable-renderer-backgrounding")
+                options.add_argument("--disable-features=TranslateUI")
+                options.add_argument("--disable-ipc-flooding-protection")
+                
+                service = Service(actual_driver_path)
+                driver = webdriver.Chrome(service=service, options=options)
+                print("Using webdriver-manager ChromeDriver")
+                return driver
+    except Exception as e:
+        print(f"WebDriver Manager failed: {e}")
+    
+    # Strategy 4: Manual installation and setup
+    try:
+        install_chrome_on_railway()
+        
+        # Try again with system Chrome
+        if os.path.exists("/usr/bin/google-chrome-stable"):
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--window-size=1920,1080")
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--blink-settings=imagesEnabled=false")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-web-security")
+            options.add_argument("--allow-running-insecure-content")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--disable-background-timer-throttling")
+            options.add_argument("--disable-backgrounding-occluded-windows")
+            options.add_argument("--disable-renderer-backgrounding")
+            options.add_argument("--disable-features=TranslateUI")
+            options.add_argument("--disable-ipc-flooding-protection")
+            
+            service = Service("/usr/bin/google-chrome-stable")
+            driver = webdriver.Chrome(service=service, options=options)
+            print("Using manually installed Chrome")
+            return driver
+    except Exception as e:
+        print(f"Manual installation failed: {e}")
+    
+    raise Exception("All Chrome driver strategies failed")
 
 def _tab_info_from_soup(soup: BeautifulSoup) -> UltimateTabInfo:
     '''
@@ -105,18 +282,68 @@ def html_tab_to_json_dict(html_body: str) -> json:
     start_parse = time.time()
     soup = BeautifulSoup(html_body, "html.parser")
     tab_info = _tab_info_from_soup(soup)
-    pre_tag = soup.find('pre')
-    if pre_tag is None:
-        return {'error': 'Could not find <pre> tag with tab content in the page. The page structure may have changed.'}
+    
+    # Try multiple selectors for tab content
+    tab_content = None
+    selectors_to_try = [
+        'pre',  # Original format
+        '.js-tab-content',  # Modern UG format
+        '.tab-content',  # Alternative modern format
+        '[data-content="tab"]',  # Data attribute format
+        '.chord-content',  # Chord-specific content
+        '.tab-text',  # Tab text format
+        '#tab-content',  # ID-based format
+        '.js-tab',  # JavaScript tab format
+        '.tab-body',  # Tab body format
+        '.content-body',  # Generic content body
+        '.tab',  # Generic tab class
+        '.chords',  # Chords class
+        '.lyrics',  # Lyrics class
+    ]
+    
+    for selector in selectors_to_try:
+        tab_content = soup.select_one(selector)
+        if tab_content:
+            print(f"Found tab content using selector: {selector}")
+            break
+    
+    # If no specific selector worked, try to find any content that looks like a tab
+    if tab_content is None:
+        # Look for any element containing tab-like content
+        for element in soup.find_all(['div', 'pre', 'span', 'p']):
+            text = element.get_text()
+            if text and len(text) > 50:
+                # Check if it contains chord-like patterns
+                chord_pattern = re.compile(r'[A-G][#b]?(m|maj|min|dim|aug|sus[24]?|add\d*|maj7|m7|7|6|9|11|13)?')
+                if chord_pattern.search(text):
+                    tab_content = element
+                    print(f"Found tab content in element: {element.name}")
+                    break
+    
+    if tab_content is None:
+        # Last resort: try to extract any text content that might be a tab
+        main_content = soup.find('main') or soup.find('article') or soup.find('div', class_='content')
+        if main_content:
+            tab_content = main_content
+            print("Using main content as fallback")
+        else:
+            return {'error': 'Could not find tab content in the page. The page structure may have changed or the content is not accessible.'}
     
     tab = UltimateTab()
-    tab_text = pre_tag.get_text('\n')  # Get all text, preserving newlines
+    tab_text = tab_content.get_text('\n')  # Get all text, preserving newlines
     lines = tab_text.splitlines()
+    
+    # Filter out empty lines and clean up
+    cleaned_lines = []
+    for line in lines:
+        line = line.strip()
+        if line and len(line) > 0:
+            cleaned_lines.append(line)
     
     # More sophisticated parsing: look for patterns
     i = 0
-    while i < len(lines):
-        line = lines[i].strip()
+    while i < len(cleaned_lines):
+        line = cleaned_lines[i]
         
         if not line:
             tab.append_blank_line()
@@ -150,38 +377,81 @@ def html_tab_to_json_dict(html_body: str) -> json:
     return {'tab': json_obj}
 
 def get_rendered_html(url):
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--blink-settings=imagesEnabled=false")
-    options.add_argument("--disable-features=VizDisplayCompositor")
-    # Block images, CSS, fonts via CDP
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-    driver.set_page_load_timeout(10)
+    """Get rendered HTML with robust error handling"""
+    driver = None
     try:
+        driver = get_chrome_driver()
+        driver.set_page_load_timeout(30)
+        driver.set_script_timeout(30)
+        
+        # Configure Chrome for better performance
         driver.execute_cdp_cmd("Network.enable", {})
-        driver.execute_cdp_cmd("Network.setBlockedURLs", {"urls": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.css", "*.woff", "*.ttf", "*.svg"]})
+        driver.execute_cdp_cmd("Network.setBlockedURLs", {
+            "urls": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.css", "*.woff", "*.ttf", "*.svg"]
+        })
+        
         start = time.time()
         driver.get(url)
-        # Wait for <pre> tag to appear
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "pre"))
+        
+        # Wait for content to load
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
+        
+        # Wait for tab content to appear (try multiple selectors)
+        tab_selectors = [
+            'pre',
+            '.js-tab-content',
+            '.tab-content',
+            '[data-content="tab"]',
+            '.chord-content',
+            '.tab-text',
+            '#tab-content',
+            '.js-tab',
+            '.tab-body',
+            '.content-body',
+            '.tab',
+            '.chords',
+            '.lyrics'
+        ]
+        
+        tab_found = False
+        for selector in tab_selectors:
+            try:
+                WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                )
+                print(f"Found tab content with selector: {selector}")
+                tab_found = True
+                break
+            except:
+                continue
+        
+        # If no specific selector found, wait a bit more for dynamic content
+        if not tab_found:
+            print("No specific tab selector found, waiting for dynamic content...")
+            time.sleep(5)
+        
+        # Additional wait for any JavaScript content
+        time.sleep(3)
+        
         html = driver.page_source
         print(f"[Timing] Selenium fetch time: {time.time() - start:.2f}s")
+        
+        if not html or len(html.strip()) < 100:
+            raise Exception("Empty or too short HTML response")
+        
+        return html
+        
     except Exception as e:
         print(f"[Error] Selenium page load failed: {e}")
-        html = ""
+        return ""
     finally:
-        driver.quit()
-    return html
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
 # Optionally, you could add a fallback to requests+BeautifulSoup for static pages:
 def get_html_requests(url):
@@ -198,7 +468,7 @@ def get_html_requests(url):
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         })
-        resp = session.get(url, timeout=10)  # Reduced timeout for faster failure
+        resp = session.get(url, timeout=15)  # Increased timeout
         resp.raise_for_status()
         print(f"[Timing] requests fetch time: {time.time() - start:.2f}s")
         return resp.text
