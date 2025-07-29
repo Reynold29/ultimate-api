@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     proxy: {
       '/tab': {
-        target: process.env.VITE_API_URL,
+        target: process.env.VITE_API_URL || 'https://ultimate-api-production.up.railway.app',
         changeOrigin: true,
         // Add this line:
         timeout: 120000, // 2 minutes
@@ -41,4 +41,4 @@ export default defineConfig({
   preview: {
     port: 4173,
   },
-}) 
+})) 

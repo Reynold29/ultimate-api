@@ -3,17 +3,28 @@
  * Handles different environments (development, staging, production)
  */
 
+// Get the API URL from environment variable
+const apiUrl = import.meta.env.VITE_API_URL;
+
+// Log the environment variable for debugging
+console.log('🔍 Environment Variable Check:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  MODE: import.meta.env.MODE,
+  DEV: import.meta.env.DEV,
+  PROD: import.meta.env.PROD,
+});
+
 const config = {
   development: {
-    apiUrl: process.env.VITE_API_URL,
+    apiUrl: apiUrl || 'http://localhost:5000',
     timeout: 120000, // Increased to 120 seconds for development
   },
   staging: {
-    apiUrl: process.env.VITE_API_URL,
+    apiUrl: apiUrl || 'https://ultimate-api-production.up.railway.app',
     timeout: 120000, // Increased to 120 seconds for staging
   },
   production: {
-    apiUrl: process.env.VITE_API_URL,
+    apiUrl: apiUrl || 'https://ultimate-api-production.up.railway.app',
     timeout: 120000, // Increased to 120 seconds for production
   },
 };

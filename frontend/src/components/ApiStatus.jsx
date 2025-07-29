@@ -1,117 +1,97 @@
 import { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { apiService } from '../services/api.js';
+import { apiConfig } from '../config/api.js';
 
-const ApiStatus = () => {
-  const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'healthy', 'unhealthy'
-  const [healthData, setHealthData] = useState(null);
+function ApiStatus() {
+  const [status, setStatus] = useState('checking');
   const [lastChecked, setLastChecked] = useState(null);
+  const [responseTime, setResponseTime] = useState(null);
+  const [error, setError] = useState(null);
 
-  const checkHealth = async () => {
-    setStatus('loading');
+  const checkApiStatus = async () => {
+    setStatus('checking');
+    setError(null);
+    const startTime = Date.now();
+
     try {
-      const health = await apiService.getHealthStatus();
-      setHealthData(health);
-      setStatus(health.status);
-      setLastChecked(new Date());
-    } catch (error) {
-      setHealthData({ status: 'unhealthy', error: error.message });
+      const healthStatus = await apiService.getHealthStatus();
+      setStatus('healthy');
+      setResponseTime(healthStatus.responseTime);
+      setLastChecked(new Date().toLocaleTimeString());
+    } catch (err) {
       setStatus('unhealthy');
-      setLastChecked(new Date());
+      setError(err.message);
+      setLastChecked(new Date().toLocaleTimeString());
     }
   };
 
   useEffect(() => {
-    checkHealth();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(checkHealth, 30000);
-    return () => clearInterval(interval);
+    checkApiStatus();
   }, []);
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'unhealthy':
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      case 'loading':
-        return <Clock className="h-5 w-5 text-yellow-500 animate-spin" />;
-      default:
-        return <WifiOff className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (status) {
-      case 'healthy':
-        return 'API is running';
-      case 'unhealthy':
-        return 'API is down';
-      case 'loading':
-        return 'Checking...';
-      default:
-        return 'Unknown status';
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'healthy':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'unhealthy':
-        return 'text-red-600 bg-red-50 border-red-200';
-      case 'loading':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
+  // Debug information
+  const debugInfo = {
+    apiUrl: apiConfig.apiUrl,
+    environment: import.meta.env.MODE,
+    viteApiUrl: import.meta.env.VITE_API_URL,
+    dev: import.meta.env.DEV,
+    prod: import.meta.env.PROD,
   };
 
   return (
     <div className="card">
       <div className="card-header">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Wifi className="h-5 w-5 text-gray-500" />
-            <h3 className="card-title text-lg">API Status</h3>
-          </div>
-          <button
-            onClick={checkHealth}
-            disabled={status === 'loading'}
-            className="btn btn-sm btn-outline"
-          >
-            Refresh
-          </button>
-        </div>
+        <h3 className="card-title">API Status</h3>
       </div>
       <div className="card-content">
-        <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor()}`}>
-          {getStatusIcon()}
-          <div className="flex-1">
-            <p className="font-medium">{getStatusText()}</p>
-            {healthData?.message && (
-              <p className="text-sm opacity-75">{healthData.message}</p>
-            )}
-            {healthData?.responseTime && (
-              <p className="text-sm opacity-75">
-                Response time: {healthData.responseTime}ms
-              </p>
-            )}
-            {healthData?.error && (
-              <p className="text-sm opacity-75">{healthData.error}</p>
-            )}
-          </div>
+        <div className="flex items-center space-x-2 mb-4">
+          <div className={`w-3 h-3 rounded-full ${
+            status === 'healthy' ? 'bg-green-500' : 
+            status === 'unhealthy' ? 'bg-red-500' : 'bg-yellow-500'
+          }`}></div>
+          <span className="text-sm font-medium">
+            {status === 'healthy' ? 'API is running' : 
+             status === 'unhealthy' ? 'API is down' : 'Checking...'}
+          </span>
         </div>
-        
-        {lastChecked && (
-          <p className="text-xs text-gray-500 mt-2">
-            Last checked: {lastChecked.toLocaleTimeString()}
-          </p>
+
+        {status === 'healthy' && (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>API Server is running ✅</p>
+            {responseTime && <p>Response time: {responseTime}ms</p>}
+            {lastChecked && <p>Last checked: {lastChecked}</p>}
+          </div>
         )}
+
+        {status === 'unhealthy' && (
+          <div className="space-y-2 text-sm text-red-600">
+            <p>❌ {error}</p>
+            {lastChecked && <p>Last checked: {lastChecked}</p>}
+          </div>
+        )}
+
+        {/* Debug Information */}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+            Debug Information
+          </summary>
+          <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+            <pre className="whitespace-pre-wrap">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
+        </details>
+
+        <button
+          onClick={checkApiStatus}
+          disabled={status === 'checking'}
+          className="mt-4 w-full btn btn-primary btn-sm"
+        >
+          {status === 'checking' ? 'Checking...' : 'Check Again'}
+        </button>
       </div>
     </div>
   );
-};
+}
 
 export default ApiStatus; 
