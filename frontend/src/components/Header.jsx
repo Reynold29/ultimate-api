@@ -23,7 +23,7 @@ const Header = () => {
           {/* Navigation and Actions */}
           <div className="flex items-center space-x-4">
             <a
-              href="https://github.com/yourusername/ultimate-guitar-tab-parser"
+              href="https://github.com/Reynold29/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"

@@ -19,7 +19,7 @@ function App() {
                     Ultimate Guitar Tab Parser
                   </h1>
                   <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Extract and parse guitar tabs from Ultimate Guitar with our powerful API. 
+                    Extract and parse guitar tabs from Ultimate Guitar with this New and Powerful API. 
                     Get structured JSON data for your music applications.
                   </p>
                 </div>
@@ -51,7 +51,7 @@ function App() {
                         </div>
                         <h3 className="font-semibold text-gray-900 mb-2">Fast Parsing</h3>
                         <p className="text-gray-600 text-sm">
-                          Extract tab data in seconds with our optimized parsing engine
+                          Extract tab data in seconds with the optimized parsing engine
                         </p>
                       </div>
                     </div>
@@ -79,7 +79,7 @@ function App() {
                         </div>
                         <h3 className="font-semibold text-gray-900 mb-2">API Ready</h3>
                         <p className="text-gray-600 text-sm">
-                          RESTful API perfect for integration with your applications
+                          RESTful API perfect for integration with any applications
                         </p>
                       </div>
                     </div>
