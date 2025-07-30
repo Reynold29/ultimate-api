@@ -71,9 +71,10 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
                             'chords': ''
                         })
                     elif 'chords' in line:
-                        # Line has only chords
+                        # Line has only chords - preserve original spacing
                         chord_text = ''
                         for chord in line['chords']:
+                            # Add the exact number of spaces from the original tab
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
                         combined_lines.append({
                             'lyric': '',
@@ -133,9 +134,10 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
                             'chords': ''
                         })
                     elif 'chords' in line:
-                        # Line has only chords
+                        # Line has only chords - preserve original spacing
                         chord_text = ''
                         for chord in line['chords']:
+                            # Add the exact number of spaces from the original tab
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
                         combined_lines.append({
                             'lyric': '',

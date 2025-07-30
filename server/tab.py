@@ -84,25 +84,26 @@ class UltimateTab(object):
         '''
         chords = [] # Array of dictionary of chords
 
-        # Clean up the line - replace multiple spaces with single spaces and handle newlines
+        # Clean up the line - handle newlines but preserve original spacing
         chords_line = chords_line.replace('\n', ' ').replace('\r', ' ')
-        # Replace multiple spaces with single spaces
-        chords_line = ' '.join(chords_line.split())
         
-        # Split by spaces and process each chord
-        parts = chords_line.split(' ')
-        leading_spaces = 0
+        # Find all chord positions while preserving spacing
+        import re
+        # Match chords (letters, numbers, #, /, etc.) separated by spaces
+        chord_pattern = r'([A-Za-z0-9#/]+)'
+        matches = list(re.finditer(chord_pattern, chords_line))
         
-        for part in parts:
-            if not part:  # Empty part (shouldn't happen after cleaning)
-                continue
-            else:
-                chord = {
-                    self.JSON_KEY_NOTE: part,
-                    self.JOSN_KEY_LEAD_SPACES: leading_spaces
-                }
-                chords.append(chord)
-                leading_spaces = 1  # Reset for next chord
+        for i, match in enumerate(matches):
+            chord_text = match.group(1)
+            # Calculate leading spaces from start of string to this chord
+            start_pos = match.start()
+            leading_spaces = start_pos
+            
+            chord = {
+                self.JSON_KEY_NOTE: chord_text,
+                self.JOSN_KEY_LEAD_SPACES: leading_spaces
+            }
+            chords.append(chord)
 
         self._append_new_line(self.JSON_KEY_CHORD_ARRAY, self.JSON_KEY_CHORD_ARRAY, chords)
 
