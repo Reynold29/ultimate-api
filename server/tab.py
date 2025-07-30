@@ -84,17 +84,25 @@ class UltimateTab(object):
         '''
         chords = [] # Array of dictionary of chords
 
+        # Clean up the line - replace multiple spaces with single spaces and handle newlines
+        chords_line = chords_line.replace('\n', ' ').replace('\r', ' ')
+        # Replace multiple spaces with single spaces
+        chords_line = ' '.join(chords_line.split())
+        
+        # Split by spaces and process each chord
+        parts = chords_line.split(' ')
         leading_spaces = 0
-        for c in chords_line.split(' '):
-            if not c: # A space character recognized
-                leading_spaces += 1
+        
+        for part in parts:
+            if not part:  # Empty part (shouldn't happen after cleaning)
+                continue
             else:
                 chord = {
-                    self.JSON_KEY_NOTE: c,
+                    self.JSON_KEY_NOTE: part,
                     self.JOSN_KEY_LEAD_SPACES: leading_spaces
                 }
                 chords.append(chord)
-                leading_spaces = 1 # reset for next chord to read in - resets to 1 to compensate for `split`
+                leading_spaces = 1  # Reset for next chord
 
         self._append_new_line(self.JSON_KEY_CHORD_ARRAY, self.JSON_KEY_CHORD_ARRAY, chords)
 

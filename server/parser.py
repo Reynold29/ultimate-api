@@ -352,8 +352,15 @@ def html_tab_to_json_dict(html_body: str) -> json:
         
         # Check if this line looks like a chord line
         if is_chord_line(line):
-            tab.append_chord_line(line)
-            i += 1
+            # For chord lines, try to combine with next line if it's also a chord line
+            # This handles cases where chords are split across multiple lines
+            combined_line = line
+            j = i + 1
+            while j < len(cleaned_lines) and is_chord_line(cleaned_lines[j]):
+                combined_line += ' ' + cleaned_lines[j]
+                j += 1
+            tab.append_chord_line(combined_line)
+            i = j  # Skip the lines we've already processed
         else:
             # This is a lyric line
             tab.append_lyric_line(line)
