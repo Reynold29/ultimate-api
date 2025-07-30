@@ -133,6 +133,8 @@ def search_ultimate_guitar(song_name, artist_name=''):
         # Search URL for Ultimate Guitar
         search_url = f"https://www.ultimate-guitar.com/search.php?search_type=title&value={encoded_query}"
         
+        print(f"Searching URL: {search_url}")  # Debug log
+        
         # Make the request with headers to mimic a browser
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -146,25 +148,43 @@ def search_ultimate_guitar(song_name, artist_name=''):
         response = requests.get(search_url, headers=headers, timeout=10)
         response.raise_for_status()
         
+        print(f"Response status: {response.status_code}")  # Debug log
+        
         # Parse the HTML response
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Look for tab links in the search results
-        # Ultimate Guitar typically has links in format: /tab/artist/song-name-123456
-        tab_links = soup.find_all('a', href=re.compile(r'/tab/.*'))
+        # Look for tab links in the search results - try multiple patterns
+        tab_links = []
         
-        if not tab_links:
-            # Try alternative search patterns
-            tab_links = soup.find_all('a', href=re.compile(r'tabs\.ultimate-guitar\.com.*'))
+        # Pattern 1: Direct tab links
+        tab_links.extend(soup.find_all('a', href=re.compile(r'/tab/.*')))
         
-        if not tab_links:
-            # Look for any links that might contain tab information
-            tab_links = soup.find_all('a', href=re.compile(r'.*tab.*'))
+        # Pattern 2: Full tabs.ultimate-guitar.com URLs
+        tab_links.extend(soup.find_all('a', href=re.compile(r'tabs\.ultimate-guitar\.com.*')))
+        
+        # Pattern 3: Any link containing 'tab'
+        tab_links.extend(soup.find_all('a', href=re.compile(r'.*tab.*')))
+        
+        # Pattern 4: Look for links in search result containers
+        search_results = soup.find_all('div', class_=re.compile(r'search.*result|result.*item'))
+        for result in search_results:
+            tab_links.extend(result.find_all('a', href=re.compile(r'.*tab.*')))
+        
+        # Pattern 5: Look for any link that might be a tab
+        all_links = soup.find_all('a', href=True)
+        for link in all_links:
+            href = link.get('href', '')
+            if 'tab' in href.lower() or 'ultimate-guitar' in href.lower():
+                tab_links.append(link)
+        
+        print(f"Found {len(tab_links)} potential tab links")  # Debug log
         
         # Filter and rank the results
         valid_urls = []
         for link in tab_links:
             href = link.get('href', '')
+            
+            # Convert relative URLs to absolute
             if href.startswith('/'):
                 href = f"https://tabs.ultimate-guitar.com{href}"
             elif href.startswith('http'):
@@ -186,15 +206,83 @@ def search_ultimate_guitar(song_name, artist_name=''):
                 seen.add(url)
                 unique_urls.append(url)
         
+        print(f"Valid URLs found: {unique_urls}")  # Debug log
+        
         # Return the first valid URL found
         if unique_urls:
             return unique_urls[0]
         
-        return None
+        # If no results found, try alternative search approach
+        print("No results found with primary search, trying alternative approach...")
+        return search_ultimate_guitar_alternative(song_name, artist_name)
         
     except requests.RequestException as e:
         print(f"Request error during search: {e}")
         return None
     except Exception as e:
         print(f"Error during search: {e}")
+        return None
+
+def search_ultimate_guitar_alternative(song_name, artist_name=''):
+    """
+    Alternative search method using different Ultimate Guitar search endpoints
+    """
+    try:
+        # Construct search query
+        search_query = song_name
+        if artist_name:
+            search_query = f"{artist_name} {song_name}"
+        
+        # URL encode the search query
+        encoded_query = urllib.parse.quote(search_query)
+        
+        # Try different search URLs
+        search_urls = [
+            f"https://www.ultimate-guitar.com/search.php?search_type=title&value={encoded_query}",
+            f"https://www.ultimate-guitar.com/search.php?search_type=artist&value={encoded_query}",
+            f"https://www.ultimate-guitar.com/search.php?value={encoded_query}",
+            f"https://tabs.ultimate-guitar.com/search?q={encoded_query}"
+        ]
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        for search_url in search_urls:
+            print(f"Trying alternative search URL: {search_url}")
+            
+            try:
+                response = requests.get(search_url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for any links that might be tabs
+                all_links = soup.find_all('a', href=True)
+                tab_urls = []
+                
+                for link in all_links:
+                    href = link.get('href', '')
+                    if 'tabs.ultimate-guitar.com' in href or ('/tab/' in href and href.startswith('/')):
+                        if href.startswith('/'):
+                            href = f"https://tabs.ultimate-guitar.com{href}"
+                        tab_urls.append(href)
+                
+                if tab_urls:
+                    print(f"Found {len(tab_urls)} URLs with alternative search")
+                    return tab_urls[0]
+                    
+            except Exception as e:
+                print(f"Alternative search failed for {search_url}: {e}")
+                continue
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error during alternative search: {e}")
         return None
