@@ -1,9 +1,13 @@
 import { Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import Header from './components/Header.jsx';
 import ApiStatus from './components/ApiStatus.jsx';
 import TabParser from './components/TabParser.jsx';
+import SongSearch from './components/SongSearch.jsx';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('search');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -30,9 +34,38 @@ function App() {
                     <ApiStatus />
                   </div>
                   
-                  {/* Tab Parser */}
+                  {/* Tab Parser and Song Search */}
                   <div className="lg:col-span-2">
-                    <TabParser />
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="flex space-x-1 border-b border-gray-200">
+                          <button
+                            className={`px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-150 ${
+                              activeTab === 'search' 
+                                ? 'border-blue-600 text-blue-600' 
+                                : 'border-transparent text-gray-500 hover:text-blue-600'
+                            }`}
+                            onClick={() => setActiveTab('search')}
+                          >
+                            Search by Song Name
+                          </button>
+                          <button
+                            className={`px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-150 ${
+                              activeTab === 'url' 
+                                ? 'border-blue-600 text-blue-600' 
+                                : 'border-transparent text-gray-500 hover:text-blue-600'
+                            }`}
+                            onClick={() => setActiveTab('url')}
+                          >
+                            Parse by URL
+                          </button>
+                        </div>
+                      </div>
+                      <div className="card-content">
+                        {activeTab === 'search' && <SongSearch />}
+                        {activeTab === 'url' && <TabParser />}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -46,12 +79,12 @@ function App() {
                       <div className="card-content">
                         <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mt-8 mb-6">
                           <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Fast Parsing</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Smart Search</h3>
                         <p className="text-gray-600 text-sm">
-                          Extract tab data in seconds with the optimized parsing engine
+                          Search for any song by name and automatically get the Ultimate Guitar URL
                         </p>
                       </div>
                     </div>
@@ -60,12 +93,12 @@ function App() {
                       <div className="card-content">
                         <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mt-8 mb-6">
                           <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Structured Data</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Fast Parsing</h3>
                         <p className="text-gray-600 text-sm">
-                          Get clean, structured JSON with chords, lyrics, and metadata
+                          Extract tab data in seconds with the optimized parsing engine
                         </p>
                       </div>
                     </div>

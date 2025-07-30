@@ -52,7 +52,7 @@ ultimate-api/
    ```
 
 3. **Test the API:**
-   - Visit `http://127.0.0.1:5000/` for status
+   - Visit `https://ultimate-api-production.up.railway.app/` for status
    - Use `/tab?url=<ultimate_guitar_url>` to parse tabs
 
 ### Frontend (React App)

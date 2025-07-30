@@ -111,6 +111,56 @@ class ApiService {
   }
 
   /**
+   * Search for a song by name and get the Ultimate Guitar URL
+   * @param {string} songName - Name of the song to search for
+   * @param {string} artistName - Optional artist name to improve search accuracy
+   * @returns {Promise<Object>} Search result with URL
+   */
+  async searchSong(songName, artistName = '') {
+    if (!songName) {
+      throw new Error('Song name is required');
+    }
+
+    console.log(`🎯 Starting song search for: "${songName}"${artistName ? ` by ${artistName}` : ''}`);
+    const startTime = Date.now();
+
+    try {
+      const params = { song: songName };
+      if (artistName) {
+        params.artist = artistName;
+      }
+
+      const response = await apiClient.get('/search', {
+        params,
+        timeout: apiConfig.timeout,
+      });
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`✅ Song search completed in ${responseTime}ms`);
+      console.log(`📦 Response data:`, response.data);
+      
+      return response.data;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Song search failed after ${responseTime}ms:`, error);
+      
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`Request timed out after ${responseTime}ms. The server took too long to respond.`);
+      }
+      
+      if (error.response?.status === 404) {
+        throw new Error(error.response.data.error || 'No tabs found for this song');
+      }
+      
+      if (error.response?.status === 500) {
+        throw new Error(error.response.data.error || 'Failed to search for song');
+      }
+      
+      throw new Error(`Request failed: ${error.response?.data?.error || error.message}`);
+    }
+  }
+
+  /**
    * Parse multiple tabs
    * @param {string[]} urls - Array of Ultimate Guitar tab URLs
    * @returns {Promise<Object>} Results with success/error tracking
