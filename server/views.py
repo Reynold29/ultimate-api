@@ -53,10 +53,16 @@ def tab_v2():
     # Post-process for joined text output
     lyrics_lines = []
     tabs_lines = []
+    
     for block in grouped_blocks:
-        if 'lyrics' in block:
+        if 'combined' in block:
+            # New combined format that preserves alignment
+            for line in block['combined']:
+                lyrics_lines.append(line.get('lyric', ''))
+                tabs_lines.append(line.get('chords', ''))
+        elif 'lyrics' in block:
             lyrics_lines.extend(block['lyrics'])
-        if 'tabs' in block:
+        elif 'tabs' in block:
             tabs_lines.extend(block['tabs'])
 
     def clean_lines(lines):

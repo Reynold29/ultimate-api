@@ -51,30 +51,46 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
             tab_dict = html_tab_to_json_dict(html)
             lines = tab_dict.get('tab', {}).get('lines', [])
             if lines:
-                lyrics_lines = []
-                tab_lines = []
+                # Create a combined structure that preserves alignment
+                combined_lines = []
                 for line in lines:
-                    if 'lyric' in line:
-                        lyrics_lines.append(line['lyric'])
-                        tab_lines.append('')
-                    elif 'chords' in line:
-                        chord_line = ''
+                    if 'lyric' in line and 'chords' in line:
+                        # Line has both lyrics and chords - preserve alignment
+                        lyric_text = line['lyric']
+                        chord_text = ''
                         for chord in line['chords']:
-                            chord_line += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
-                        tab_lines.append(chord_line)
-                        lyrics_lines.append('')
+                            chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        combined_lines.append({
+                            'lyric': lyric_text,
+                            'chords': chord_text
+                        })
+                    elif 'lyric' in line:
+                        # Line has only lyrics
+                        combined_lines.append({
+                            'lyric': line['lyric'],
+                            'chords': ''
+                        })
+                    elif 'chords' in line:
+                        # Line has only chords
+                        chord_text = ''
+                        for chord in line['chords']:
+                            chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        combined_lines.append({
+                            'lyric': '',
+                            'chords': chord_text
+                        })
                     else:
-                        lyrics_lines.append('')
-                        tab_lines.append('')
-                while lyrics_lines and not lyrics_lines[-1].strip():
-                    lyrics_lines.pop()
-                    tab_lines.pop()
-                result = []
-                if lyrics_lines:
-                    result.append({'lyrics': lyrics_lines})
-                if tab_lines:
-                    result.append({'tabs': tab_lines})
-                return result
+                        # Empty line
+                        combined_lines.append({
+                            'lyric': '',
+                            'chords': ''
+                        })
+                
+                # Remove trailing empty lines
+                while combined_lines and not combined_lines[-1]['lyric'].strip() and not combined_lines[-1]['chords'].strip():
+                    combined_lines.pop()
+                
+                return [{'combined': combined_lines}]
             else:
                 errors.append("requests returned no tab lines")
         else:
@@ -97,30 +113,46 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
             tab_dict = html_tab_to_json_dict(html)
             lines = tab_dict.get('tab', {}).get('lines', [])
             if lines:
-                lyrics_lines = []
-                tab_lines = []
+                # Create a combined structure that preserves alignment
+                combined_lines = []
                 for line in lines:
-                    if 'lyric' in line:
-                        lyrics_lines.append(line['lyric'])
-                        tab_lines.append('')
-                    elif 'chords' in line:
-                        chord_line = ''
+                    if 'lyric' in line and 'chords' in line:
+                        # Line has both lyrics and chords - preserve alignment
+                        lyric_text = line['lyric']
+                        chord_text = ''
                         for chord in line['chords']:
-                            chord_line += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
-                        tab_lines.append(chord_line)
-                        lyrics_lines.append('')
+                            chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        combined_lines.append({
+                            'lyric': lyric_text,
+                            'chords': chord_text
+                        })
+                    elif 'lyric' in line:
+                        # Line has only lyrics
+                        combined_lines.append({
+                            'lyric': line['lyric'],
+                            'chords': ''
+                        })
+                    elif 'chords' in line:
+                        # Line has only chords
+                        chord_text = ''
+                        for chord in line['chords']:
+                            chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        combined_lines.append({
+                            'lyric': '',
+                            'chords': chord_text
+                        })
                     else:
-                        lyrics_lines.append('')
-                        tab_lines.append('')
-                while lyrics_lines and not lyrics_lines[-1].strip():
-                    lyrics_lines.pop()
-                    tab_lines.pop()
-                result = []
-                if lyrics_lines:
-                    result.append({'lyrics': lyrics_lines})
-                if tab_lines:
-                    result.append({'tabs': tab_lines})
-                return result
+                        # Empty line
+                        combined_lines.append({
+                            'lyric': '',
+                            'chords': ''
+                        })
+                
+                # Remove trailing empty lines
+                while combined_lines and not combined_lines[-1]['lyric'].strip() and not combined_lines[-1]['chords'].strip():
+                    combined_lines.pop()
+                
+                return [{'combined': combined_lines}]
             else:
                 errors.append(f"Selenium returned no tab lines (attempt {attempt+1})")
         except Exception as e:
