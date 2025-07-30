@@ -100,8 +100,8 @@ def search_song():
         if not song_name:
             return jsonify({'error': 'Song name is required'}), 400
 
-        # Try to find a matching URL from our predefined list
-        matching_url = find_song_url(song_name, artist_name)
+        # Search Ultimate Guitar dynamically
+        matching_url = search_ultimate_guitar(song_name, artist_name)
         
         if not matching_url:
             return jsonify({'error': f'No tabs found for "{song_name}". Try using the /tab endpoint with a direct Ultimate Guitar URL.'}), 404
@@ -117,53 +117,84 @@ def search_song():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def find_song_url(song_name, artist_name=''):
+def search_ultimate_guitar(song_name, artist_name=''):
     """
-    Find a song URL from a predefined list of popular songs
+    Search Ultimate Guitar website for a song and return the best matching URL
     """
-    # Predefined list of popular songs with their Ultimate Guitar URLs
-    popular_songs = {
-        'wonderwall': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/oasis/wonderwall-190475',
-            'artist': 'Oasis',
-            'title': 'Wonderwall'
-        },
-        'what an awesome god': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/phil-wickham/what-an-awesome-god-chords-5749718',
-            'artist': 'Phil Wickham',
-            'title': 'What an Awesome God'
-        },
-        'shape of you': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/ed-sheeran/shape-of-you-1956589',
-            'artist': 'Ed Sheeran',
-            'title': 'Shape of You'
-        },
-        'let it be': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/beatles/let-it-be-277709',
-            'artist': 'The Beatles',
-            'title': 'Let It Be'
-        },
-        'hotel california': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/eagles/hotel-california-2355357',
-            'artist': 'Eagles',
-            'title': 'Hotel California'
-        },
-        'stairway to heaven': {
-            'url': 'https://tabs.ultimate-guitar.com/tab/led-zeppelin/stairway-to-heaven-5434176',
-            'artist': 'Led Zeppelin',
-            'title': 'Stairway to Heaven'
+    try:
+        # Construct search query
+        search_query = song_name
+        if artist_name:
+            search_query = f"{artist_name} {song_name}"
+        
+        # URL encode the search query
+        encoded_query = urllib.parse.quote(search_query)
+        
+        # Search URL for Ultimate Guitar
+        search_url = f"https://www.ultimate-guitar.com/search.php?search_type=title&value={encoded_query}"
+        
+        # Make the request with headers to mimic a browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
         }
-    }
-    
-    # Search for matches
-    search_terms = [song_name.lower()]
-    if artist_name:
-        search_terms.append(f"{artist_name.lower()} {song_name.lower()}")
-        search_terms.append(f"{song_name.lower()} {artist_name.lower()}")
-    
-    for term in search_terms:
-        for key, song_info in popular_songs.items():
-            if term in key or key in term:
-                return song_info['url']
-    
-    return None
+        
+        response = requests.get(search_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        # Parse the HTML response
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Look for tab links in the search results
+        # Ultimate Guitar typically has links in format: /tab/artist/song-name-123456
+        tab_links = soup.find_all('a', href=re.compile(r'/tab/.*'))
+        
+        if not tab_links:
+            # Try alternative search patterns
+            tab_links = soup.find_all('a', href=re.compile(r'tabs\.ultimate-guitar\.com.*'))
+        
+        if not tab_links:
+            # Look for any links that might contain tab information
+            tab_links = soup.find_all('a', href=re.compile(r'.*tab.*'))
+        
+        # Filter and rank the results
+        valid_urls = []
+        for link in tab_links:
+            href = link.get('href', '')
+            if href.startswith('/'):
+                href = f"https://tabs.ultimate-guitar.com{href}"
+            elif href.startswith('http'):
+                # Ensure it's a tabs.ultimate-guitar.com URL
+                if 'tabs.ultimate-guitar.com' in href:
+                    valid_urls.append(href)
+            else:
+                continue
+            
+            # Only add if it's a valid tabs URL
+            if 'tabs.ultimate-guitar.com' in href:
+                valid_urls.append(href)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_urls = []
+        for url in valid_urls:
+            if url not in seen:
+                seen.add(url)
+                unique_urls.append(url)
+        
+        # Return the first valid URL found
+        if unique_urls:
+            return unique_urls[0]
+        
+        return None
+        
+    except requests.RequestException as e:
+        print(f"Request error during search: {e}")
+        return None
+    except Exception as e:
+        print(f"Error during search: {e}")
+        return None
