@@ -133,8 +133,6 @@ def search_ultimate_guitar(song_name, artist_name=''):
         # Search URL for Ultimate Guitar
         search_url = f"https://www.ultimate-guitar.com/search.php?search_type=title&value={encoded_query}"
         
-        print(f"Searching URL: {search_url}")  # Debug log
-        
         # Make the request with headers to mimic a browser
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -148,55 +146,76 @@ def search_ultimate_guitar(song_name, artist_name=''):
         response = requests.get(search_url, headers=headers, timeout=10)
         response.raise_for_status()
         
-        print(f"Response status: {response.status_code}")  # Debug log
-        
         # Parse the HTML response
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Look for tab links in the search results - try multiple patterns
-        tab_links = []
+        # Look for JSON data in the HTML that contains tab URLs
+        tab_urls = []
         
-        # Pattern 1: Direct tab links
-        tab_links.extend(soup.find_all('a', href=re.compile(r'/tab/.*')))
+        # Pattern 1: Look for JSON data in script tags
+        script_tags = soup.find_all('script')
+        for script in script_tags:
+            script_content = script.get_text()
+            if '"tab_url"' in script_content:
+                # Extract tab URLs from JSON
+                import json
+                try:
+                    # Find JSON objects that contain tab_url
+                    json_matches = re.findall(r'\{[^}]*"tab_url"[^}]*\}', script_content)
+                    for json_str in json_matches:
+                        try:
+                            # Clean up the JSON string
+                            json_str = json_str.replace('&quot;', '"')
+                            data = json.loads(json_str)
+                            if 'tab_url' in data:
+                                tab_urls.append(data['tab_url'])
+                        except json.JSONDecodeError:
+                            continue
+                except Exception as e:
+                    print(f"JSON parsing error: {e}")
+                    continue
         
-        # Pattern 2: Full tabs.ultimate-guitar.com URLs
-        tab_links.extend(soup.find_all('a', href=re.compile(r'tabs\.ultimate-guitar\.com.*')))
+        # Pattern 2: Look for tab URLs in the entire HTML content
+        if not tab_urls:
+            html_content = response.text
+            import html
+            try:
+                decoded_content = html.unescape(html_content)
+            except:
+                decoded_content = html_content
+            # Use a robust regex to extract the first valid tab_url
+            match = re.search(r'"tab_url":"(https://tabs\.ultimate-guitar\.com/tab/[^"]+)"', decoded_content)
+            if match:
+                tab_urls.append(match.group(1))
         
-        # Pattern 3: Any link containing 'tab'
-        tab_links.extend(soup.find_all('a', href=re.compile(r'.*tab.*')))
+        # Pattern 3: Look for specific tab URL patterns
+        if not tab_urls:
+            html_content = response.text
+            # Look for specific tab URL patterns
+            tab_url_pattern = r'tabs\.ultimate-guitar\.com/tab/[^"\s]*'
+            all_url_matches = re.findall(tab_url_pattern, html_content)
+            # Only add URLs that look like proper tab URLs
+            valid_urls = []
+            for url in all_url_matches:
+                if len(url) < 200 and '/tab/' in url:
+                    valid_urls.append(f"https://{url}")
+            tab_urls.extend(valid_urls)
+            print(f"Found {len(valid_urls)} potential URLs via pattern 3")
         
-        # Pattern 4: Look for links in search result containers
-        search_results = soup.find_all('div', class_=re.compile(r'search.*result|result.*item'))
-        for result in search_results:
-            tab_links.extend(result.find_all('a', href=re.compile(r'.*tab.*')))
-        
-        # Pattern 5: Look for any link that might be a tab
-        all_links = soup.find_all('a', href=True)
-        for link in all_links:
-            href = link.get('href', '')
-            if 'tab' in href.lower() or 'ultimate-guitar' in href.lower():
-                tab_links.append(link)
-        
-        print(f"Found {len(tab_links)} potential tab links")  # Debug log
+        # Pattern 3: Look for direct links as fallback
+        if not tab_urls:
+            tab_links = soup.find_all('a', href=re.compile(r'tabs\.ultimate-guitar\.com.*'))
+            for link in tab_links:
+                href = link.get('href', '')
+                if href.startswith('http'):
+                    tab_urls.append(href)
         
         # Filter and rank the results
         valid_urls = []
-        for link in tab_links:
-            href = link.get('href', '')
-            
-            # Convert relative URLs to absolute
-            if href.startswith('/'):
-                href = f"https://tabs.ultimate-guitar.com{href}"
-            elif href.startswith('http'):
-                # Ensure it's a tabs.ultimate-guitar.com URL
-                if 'tabs.ultimate-guitar.com' in href:
-                    valid_urls.append(href)
-            else:
-                continue
-            
-            # Only add if it's a valid tabs URL
-            if 'tabs.ultimate-guitar.com' in href:
-                valid_urls.append(href)
+        for url in tab_urls:
+            # Ensure it's a valid tabs.ultimate-guitar.com URL
+            if 'tabs.ultimate-guitar.com' in url:
+                valid_urls.append(url)
         
         # Remove duplicates while preserving order
         seen = set()
@@ -205,8 +224,6 @@ def search_ultimate_guitar(song_name, artist_name=''):
             if url not in seen:
                 seen.add(url)
                 unique_urls.append(url)
-        
-        print(f"Valid URLs found: {unique_urls}")  # Debug log
         
         # Return the first valid URL found
         if unique_urls:
