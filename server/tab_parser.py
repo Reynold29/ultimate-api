@@ -93,14 +93,14 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
                         })
                         i += 1
                     else:
-                        # Empty line
+                        # Empty line - preserve it for paragraph spacing
                         combined_lines.append({
                             'lyric': '',
                             'chords': ''
                         })
                         i += 1
                 
-                # Remove trailing empty lines
+                # Remove trailing empty lines but keep internal blank lines for spacing
                 while combined_lines and not combined_lines[-1]['lyric'].strip() and not combined_lines[-1]['chords'].strip():
                     combined_lines.pop()
                 

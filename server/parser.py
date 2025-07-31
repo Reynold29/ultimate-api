@@ -387,6 +387,11 @@ def html_tab_to_json_dict(html_body: str) -> json:
                 tab.append_lyric_line(lyric_line)
                 
                 i = j + 1  # Skip all chord lines and the lyric line
+                
+                # Add blank line after each verse for better readability
+                # Check if next line is a chord line (indicating new verse/section)
+                if i < len(cleaned_lines) and is_chord_line(cleaned_lines[i]):
+                    tab.append_blank_line()
             else:
                 # Just chord line(s) without following lyric
                 tab.append_chord_line(combined_chord_line)

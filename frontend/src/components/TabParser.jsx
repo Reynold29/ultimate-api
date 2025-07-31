@@ -256,20 +256,22 @@ const TabParser = () => {
                   {activeTab === 'combined' && (
                     <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto">
                       {combinedData?.lines ? (
-                        <div className="space-y-2">
+                        <div>
                           {combinedData.lines.map((line, index) => (
-                            <div key={index} className="whitespace-pre-wrap">
+                            <div key={index}>
                               {line.chords && (
-                                <div className="text-yellow-400 font-semibold">
+                                <div className="text-yellow-400 font-semibold whitespace-pre">
                                   {line.chords}
                                 </div>
                               )}
                               {line.lyric && (
-                                <div className="text-green-400">
+                                <div className="text-green-400 whitespace-pre">
                                   {line.lyric}
                                 </div>
                               )}
-                              {!line.chords && !line.lyric && <br />}
+                              {!line.chords && !line.lyric && (
+                                <div className="h-4"></div>
+                              )}
                             </div>
                           ))}
                         </div>
