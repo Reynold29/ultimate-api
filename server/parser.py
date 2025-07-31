@@ -369,40 +369,28 @@ def html_tab_to_json_dict(html_body: str) -> json:
         
         # Check if this line looks like a chord line
         if is_chord_line(line):
-            # Look ahead to see if there's a lyric line following this chord line
-            if i + 1 < len(cleaned_lines) and not is_chord_line(cleaned_lines[i + 1]):
-                # We have a chord line followed by a lyric line
-                chord_line = line
-                lyric_line = cleaned_lines[i + 1]
+            # Look ahead to see if there are multiple consecutive chord lines
+            combined_chord_line = line
+            j = i + 1
+            while j < len(cleaned_lines) and is_chord_line(cleaned_lines[j]):
+                combined_chord_line += ' ' + cleaned_lines[j]
+                j += 1
+            
+            # Look ahead to see if there's a lyric line following the chord lines
+            if j < len(cleaned_lines) and not is_chord_line(cleaned_lines[j]):
+                # We have chord line(s) followed by a lyric line
+                lyric_line = cleaned_lines[j]
                 
-                # Parse the chord line to get individual chords with their positions
-                chords = []
-                import re
-                chord_pattern = r'([A-Za-z0-9#/]+)'
-                chord_matches = list(re.finditer(chord_pattern, chord_line))
-                
-                for match in chord_matches:
-                    chord_text = match.group(1)
-                    # Calculate position relative to the chord line
-                    chord_pos = match.start()
-                    leading_spaces = chord_pos
-                    
-                    chord = {
-                        'note': chord_text,
-                        'pre_spaces': leading_spaces
-                    }
-                    chords.append(chord)
-                
-                # Add the chord line first
-                tab.append_chord_line(chord_line)
+                # Add the combined chord line
+                tab.append_chord_line(combined_chord_line)
                 # Then add the lyric line
                 tab.append_lyric_line(lyric_line)
                 
-                i += 2  # Skip both chord and lyric lines
+                i = j + 1  # Skip all chord lines and the lyric line
             else:
-                # Just a chord line without following lyric
-                tab.append_chord_line(line)
-                i += 1
+                # Just chord line(s) without following lyric
+                tab.append_chord_line(combined_chord_line)
+                i = j  # Skip all chord lines
         else:
             # This is a lyric line without preceding chord line
             tab.append_lyric_line(line)
