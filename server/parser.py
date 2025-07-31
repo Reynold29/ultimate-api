@@ -338,6 +338,22 @@ def html_tab_to_json_dict(html_body: str) -> json:
     for line in lines:
         line = line.strip()
         if line and len(line) > 0:
+            # Filter out metadata lines that interfere with alignment
+            # Skip lines that are just metadata (brackets, capo info, etc.)
+            if (line.startswith('[') and line.endswith(']')) or \
+               line.lower().startswith('capo') or \
+               line.lower().startswith('tuning') or \
+               line.lower().startswith('key:') or \
+               line.lower().startswith('difficulty:') or \
+               line.lower().startswith('author:') or \
+               line.lower().startswith('transpose:') or \
+               line.lower().startswith('chords:') or \
+               line.lower().startswith('intro') or \
+               line.lower().startswith('verse') or \
+               line.lower().startswith('chorus') or \
+               line.lower().startswith('bridge') or \
+               line.lower().startswith('outro'):
+                continue
             cleaned_lines.append(line)
     
     # More sophisticated parsing: look for patterns
@@ -365,6 +381,11 @@ def html_tab_to_json_dict(html_body: str) -> json:
             # This is a lyric line
             tab.append_lyric_line(line)
             i += 1
+            
+            # Add blank line after each paragraph/verse for better readability
+            # Check if next line is a chord line (indicating new verse/section)
+            if i < len(cleaned_lines) and is_chord_line(cleaned_lines[i]):
+                tab.append_blank_line()
     
     json_obj = {
         'title': tab_info.title,

@@ -202,6 +202,47 @@ class ApiService {
   }
 
   /**
+   * Parse Ultimate Guitar tab in combined format
+   * @param {string} url - Ultimate Guitar tab URL
+   * @returns {Promise<Object>} Combined tab data with chords and lyrics aligned
+   */
+  async parseCombinedTab(url) {
+    if (!url) {
+      throw new Error('URL is required');
+    }
+
+    console.log(`🎯 Starting combined tab parse for: ${url}`);
+    const startTime = Date.now();
+
+    try {
+      const response = await apiClient.get('/tab/combined', {
+        params: { url },
+        timeout: apiConfig.timeout,
+      });
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`✅ Combined tab parse completed in ${responseTime}ms`);
+      
+      return response.data;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Combined tab parse failed after ${responseTime}ms:`, error);
+      
+      if (error.response?.status === 400) {
+        throw new Error(`Invalid request: ${error.response.data.error || 'Bad request'}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Tab not found: ${error.response.data.error || 'URL not found'}`);
+      } else if (error.response?.status >= 500) {
+        throw new Error(`Server error: ${error.response.data.error || 'Internal server error'}`);
+      } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        throw new Error(`Request timed out after ${apiConfig.timeout}ms. The server may be busy or the URL may be invalid.`);
+      } else {
+        throw new Error(`Failed to parse combined tab: ${error.response?.data?.error || error.message}`);
+      }
+    }
+  }
+
+  /**
    * Get API health status
    * @returns {Promise<Object>} Health status information
    */

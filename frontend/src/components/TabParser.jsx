@@ -5,6 +5,7 @@ import { apiService } from '../services/api.js';
 const TabParser = () => {
   const [tabUrl, setTabUrl] = useState('');
   const [tabData, setTabData] = useState(null);
+  const [combinedData, setCombinedData] = useState(null);
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -19,11 +20,21 @@ const TabParser = () => {
     setIsParsing(true);
     setError('');
     setTabData(null);
+    setCombinedData(null);
     setCopied(false);
 
     try {
+      // Parse regular tab data
       const data = await apiService.parseTab(tabUrl);
       setTabData(data);
+      
+      // Also fetch combined data
+      try {
+        const combined = await apiService.parseCombinedTab(tabUrl);
+        setCombinedData(combined);
+      } catch (combinedErr) {
+        console.log('Combined format not available:', combinedErr.message);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -224,6 +235,12 @@ const TabParser = () => {
                   >
                     Tabs
                   </button>
+                  <button
+                    className={`px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-150 ${activeTab === 'combined' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+                    onClick={() => setActiveTab('combined')}
+                  >
+                    Combined
+                  </button>
                 </div>
                 <div>
                   {activeTab === 'lyrics' && (
@@ -235,6 +252,33 @@ const TabParser = () => {
                     <pre className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
                       {tabData.tabs_text || 'No tabs found.'}
                     </pre>
+                  )}
+                  {activeTab === 'combined' && (
+                    <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto">
+                      {combinedData?.lines ? (
+                        <div className="space-y-2">
+                          {combinedData.lines.map((line, index) => (
+                            <div key={index} className="whitespace-pre-wrap">
+                              {line.chords && (
+                                <div className="text-yellow-400 font-semibold">
+                                  {line.chords}
+                                </div>
+                              )}
+                              {line.lyric && (
+                                <div className="text-green-400">
+                                  {line.lyric}
+                                </div>
+                              )}
+                              {!line.chords && !line.lyric && <br />}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400">
+                          Combined format not available. Try parsing again.
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

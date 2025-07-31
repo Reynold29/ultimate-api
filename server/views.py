@@ -94,6 +94,49 @@ def tab_v2():
         'tabs_text': tabs_text
     })
 
+@app.route('/tab/combined')
+def tab_combined():
+    """
+    Get tab content with lyrics and chords combined line by line
+    """
+    try:
+        ultimate_url = request.args.get('url')
+        if not ultimate_url:
+            return jsonify({'error': 'URL parameter is required'}), 400
+
+        grouped_blocks = grouped_blocks_from_ultimate_tab(ultimate_url)
+
+        # Process combined format for display
+        combined_lines = []
+        for block in grouped_blocks:
+            if 'combined' in block:
+                combined_lines.extend(block['combined'])
+            elif 'error' in block:
+                return jsonify(block), 400
+
+        # Format for display: combine chords and lyrics on same line
+        display_lines = []
+        for line in combined_lines:
+            lyric = line.get('lyric', '').strip()
+            chords = line.get('chords', '').strip()
+            
+            if lyric or chords:
+                # Create a combined line with chords above lyrics
+                display_line = {
+                    'chords': chords,
+                    'lyric': lyric,
+                    'combined': f"{chords}\n{lyric}" if chords and lyric else chords or lyric
+                }
+                display_lines.append(display_line)
+
+        return jsonify({
+            'lines': display_lines,
+            'message': 'Combined tab format with chords and lyrics aligned'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/search')
 def search_song():
     """
