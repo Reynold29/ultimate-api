@@ -53,39 +53,52 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
             if lines:
                 # Create a combined structure that preserves alignment
                 combined_lines = []
-                for line in lines:
-                    if 'chords' in line and 'lyric' in line:
-                        # Line has both chords and lyrics - this is our new combined format
-                        lyric_text = line['lyric']
+                i = 0
+                while i < len(lines):
+                    line = lines[i]
+                    
+                    # Check if this is a chord line followed by a lyric line
+                    if 'chords' in line and i + 1 < len(lines) and 'lyric' in lines[i + 1]:
+                        # We have a chord line followed by a lyric line
+                        chord_line = line
+                        lyric_line = lines[i + 1]
+                        
+                        # Build the chord text with proper spacing
                         chord_text = ''
-                        for chord in line['chords']:
+                        for chord in chord_line['chords']:
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        
+                        # Create combined line
                         combined_lines.append({
-                            'lyric': lyric_text,
-                            'chords': chord_text
+                            'chords': chord_text,
+                            'lyric': lyric_line['lyric']
                         })
+                        
+                        i += 2  # Skip both lines
                     elif 'lyric' in line:
                         # Line has only lyrics
                         combined_lines.append({
                             'lyric': line['lyric'],
                             'chords': ''
                         })
+                        i += 1
                     elif 'chords' in line:
                         # Line has only chords - preserve original spacing
                         chord_text = ''
                         for chord in line['chords']:
-                            # Add the exact number of spaces from the original tab
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
                         combined_lines.append({
                             'lyric': '',
                             'chords': chord_text
                         })
+                        i += 1
                     else:
                         # Empty line
                         combined_lines.append({
                             'lyric': '',
                             'chords': ''
                         })
+                        i += 1
                 
                 # Remove trailing empty lines
                 while combined_lines and not combined_lines[-1]['lyric'].strip() and not combined_lines[-1]['chords'].strip():
@@ -116,39 +129,52 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
             if lines:
                 # Create a combined structure that preserves alignment
                 combined_lines = []
-                for line in lines:
-                    if 'chords' in line and 'lyric' in line:
-                        # Line has both chords and lyrics - this is our new combined format
-                        lyric_text = line['lyric']
+                i = 0
+                while i < len(lines):
+                    line = lines[i]
+                    
+                    # Check if this is a chord line followed by a lyric line
+                    if 'chords' in line and i + 1 < len(lines) and 'lyric' in lines[i + 1]:
+                        # We have a chord line followed by a lyric line
+                        chord_line = line
+                        lyric_line = lines[i + 1]
+                        
+                        # Build the chord text with proper spacing
                         chord_text = ''
-                        for chord in line['chords']:
+                        for chord in chord_line['chords']:
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
+                        
+                        # Create combined line
                         combined_lines.append({
-                            'lyric': lyric_text,
-                            'chords': chord_text
+                            'chords': chord_text,
+                            'lyric': lyric_line['lyric']
                         })
+                        
+                        i += 2  # Skip both lines
                     elif 'lyric' in line:
                         # Line has only lyrics
                         combined_lines.append({
                             'lyric': line['lyric'],
                             'chords': ''
                         })
+                        i += 1
                     elif 'chords' in line:
                         # Line has only chords - preserve original spacing
                         chord_text = ''
                         for chord in line['chords']:
-                            # Add the exact number of spaces from the original tab
                             chord_text += ' ' * chord.get('pre_spaces', 0) + chord.get('note', '')
                         combined_lines.append({
                             'lyric': '',
                             'chords': chord_text
                         })
+                        i += 1
                     else:
                         # Empty line
                         combined_lines.append({
                             'lyric': '',
                             'chords': ''
                         })
+                        i += 1
                 
                 # Remove trailing empty lines
                 while combined_lines and not combined_lines[-1]['lyric'].strip() and not combined_lines[-1]['chords'].strip():

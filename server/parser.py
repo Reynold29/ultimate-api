@@ -352,7 +352,8 @@ def html_tab_to_json_dict(html_body: str) -> json:
                line.lower().startswith('verse') or \
                line.lower().startswith('chorus') or \
                line.lower().startswith('bridge') or \
-               line.lower().startswith('outro'):
+               line.lower().startswith('outro') or \
+               line == 'X':  # Filter out the X at the end
                 continue
             cleaned_lines.append(line)
     
@@ -374,7 +375,7 @@ def html_tab_to_json_dict(html_body: str) -> json:
                 chord_line = line
                 lyric_line = cleaned_lines[i + 1]
                 
-                # Calculate chord positions relative to the lyric line
+                # Parse the chord line to get individual chords with their positions
                 chords = []
                 import re
                 chord_pattern = r'([A-Za-z0-9#/]+)'
@@ -382,7 +383,7 @@ def html_tab_to_json_dict(html_body: str) -> json:
                 
                 for match in chord_matches:
                     chord_text = match.group(1)
-                    # Calculate position relative to the lyric line
+                    # Calculate position relative to the chord line
                     chord_pos = match.start()
                     leading_spaces = chord_pos
                     
@@ -392,12 +393,10 @@ def html_tab_to_json_dict(html_body: str) -> json:
                     }
                     chords.append(chord)
                 
-                # Create a combined line with both chords and lyrics
-                combined_line = {
-                    'chords': chords,
-                    'lyric': lyric_line
-                }
-                tab.lines.append(combined_line)
+                # Add the chord line first
+                tab.append_chord_line(chord_line)
+                # Then add the lyric line
+                tab.append_lyric_line(lyric_line)
                 
                 i += 2  # Skip both chord and lyric lines
             else:
