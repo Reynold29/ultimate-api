@@ -54,8 +54,8 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
                 # Create a combined structure that preserves alignment
                 combined_lines = []
                 for line in lines:
-                    if 'lyric' in line and 'chords' in line:
-                        # Line has both lyrics and chords - preserve alignment
+                    if 'chords' in line and 'lyric' in line:
+                        # Line has both chords and lyrics - this is our new combined format
                         lyric_text = line['lyric']
                         chord_text = ''
                         for chord in line['chords']:
@@ -117,8 +117,8 @@ def grouped_blocks_from_ultimate_tab(url: str, max_retries: int = 5) -> list:
                 # Create a combined structure that preserves alignment
                 combined_lines = []
                 for line in lines:
-                    if 'lyric' in line and 'chords' in line:
-                        # Line has both lyrics and chords - preserve alignment
+                    if 'chords' in line and 'lyric' in line:
+                        # Line has both chords and lyrics - this is our new combined format
                         lyric_text = line['lyric']
                         chord_text = ''
                         for chord in line['chords']:
